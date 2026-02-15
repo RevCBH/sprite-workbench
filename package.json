@@ -1,0 +1,17 @@
+{
+  "name": "sprite-workbench",
+  "private": false,
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --open /sprite-workbench.html",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^6.1.0"
+  }
+}

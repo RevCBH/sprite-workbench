@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Workbench</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0f;
+    --bg-panel: #12121a;
+    --bg-surface: #1a1a26;
+    --bg-elevated: #222233;
+    --border: #2a2a3d;
+    --border-active: #4a4a6d;
+    --text-primary: #e0e0f0;
+    --text-secondary: #8888aa;
+    --text-dim: #555570;
+    --accent: #00e5a0;
+    --accent-dim: #00e5a033;
+    --accent-hover: #00ffb4;
+    --warning: #ff6b4a;
+    --info: #4a9eff;
+    --selection: #00e5a022;
+    --frame-selected: #00e5a044;
+    --checkerboard-a: #1a1a26;
+    --checkerboard-b: #222233;
+    --scrollbar-track: #12121a;
+    --scrollbar-thumb: #2a2a3d;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Space Grotesk', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+  .app {
+    display: grid;
+    grid-template-rows: 48px 1fr auto;
+    height: 100vh;
+    overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .logo svg { flex-shrink: 0; }
+
+  .header-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+
+  .btn:hover { border-color: var(--border-active); background: var(--bg-elevated); }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-accent {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  .btn-danger {
+    border-color: #ff6b4a44;
+    color: var(--warning);
+  }
+
+  .btn-danger:hover { background: #ff6b4a15; border-color: var(--warning); }
+
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  /* ── Main Content ── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ── Preview Panel ── */
+  .preview-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    background:
+      repeating-conic-gradient(var(--checkerboard-a) 0% 25%, var(--checkerboard-b) 0% 50%) 
+      0 0 / 24px 24px;
+  }
+
+  .preview-panel.empty-state {
+    background: var(--bg-deep);
+  }
+
+  .upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 48px;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 480px;
+    text-align: center;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .upload-zone svg { opacity: 0.5; }
+  .upload-zone:hover svg { opacity: 0.8; }
+
+  .upload-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .upload-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+
+  #videoInput { display: none; }
+
+  .preview-canvas-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  #previewCanvas {
+    max-width: 90%;
+    max-height: 90%;
+    image-rendering: pixelated;
+    border: 1px solid var(--border);
+  }
+
+  .preview-overlay {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+  }
+
+  .preview-overlay .label { color: var(--text-dim); }
+  .preview-overlay .value { color: var(--accent); font-weight: 500; }
+
+  .zoom-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 4px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section:last-child { border-bottom: none; }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .control-row:last-child { margin-bottom: 0; }
+
+  .control-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .control-value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  input[type="number"] {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    width: 64px;
+    padding: 4px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    text-align: right;
+    outline: none;
+  }
+
+  input[type="number"]:focus { border-color: var(--accent); }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+
+  input[type="text"] {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    outline: none;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--bg-elevated);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg-panel);
+  }
+
+  .unit { color: var(--text-dim); font-size: 11px; }
+
+  .playback-controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .playback-controls .btn { flex: 1; justify-content: center; }
+
+  .export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .export-option {
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .export-option:hover {
+    border-color: var(--accent);
+    background: var(--selection);
+  }
+
+  .export-option-title {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .export-option-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+
+  .stat-box .label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-box .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 2px;
+  }
+
+  .bg-color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .bg-color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-color-swatch.transparent {
+    background:
+      repeating-conic-gradient(#666 0% 25%, #999 0% 50%)
+      0 0 / 8px 8px;
+  }
+
+  .bg-color-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+
+  .bg-color-swatch input[type="color"] {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .onion-skin-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .toggle-track {
+    width: 32px;
+    height: 18px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .toggle-track.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+
+  .toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .toggle-track.active .toggle-knob {
+    left: 16px;
+    background: var(--accent);
+  }
+
+  /* ── Timeline ── */
+  .timeline {
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-height: 140px;
+    max-height: 200px;
+    overflow: hidden;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .timeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .timeline-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .timeline-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 12px;
+  }
+
+  .timeline-info span { color: var(--accent); font-weight: 500; }
+
+  .timeline-scroll {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 12px;
+    white-space: nowrap;
+    min-width: 0;
+    scroll-behavior: auto;
+  }
+
+  .frame-thumb {
+    flex-shrink: 0;
+    width: 72px;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.1s;
+    opacity: 1;
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 3px;
+  }
+
+  .frame-thumb:hover { border-color: var(--border-active); }
+
+  .frame-thumb.selected { border-color: var(--accent); }
+
+  .frame-thumb.disabled {
+    opacity: 0.25;
+    border-color: transparent;
+  }
+
+  .frame-thumb.current::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+
+  .frame-thumb canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .frame-number {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
+
+  .frame-actions {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: none;
+  }
+
+  .frame-thumb:hover .frame-actions { display: flex; }
+
+  .frame-action-btn {
+    width: 18px;
+    height: 18px;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    color: white;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame-action-btn:hover { background: var(--warning); }
+
+  .empty-timeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--text-dim);
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  /* ── Processing Overlay ── */
+  .processing-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+  }
+
+  .processing-overlay.hidden { display: none; }
+
+  .progress-bar-track {
+    width: 300px;
+    height: 4px;
+    background: var(--bg-elevated);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.15s;
+  }
+
+  .processing-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* Selection range indicator */
+  .range-indicator {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+  }
+
+  .range-indicator span { color: var(--accent); }
+
+  /* ── Ping Pong / Bounce indicator ── */
+  select {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 4px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 220px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-elevated);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 50;
+    pointer-events: none;
+  }
+
+  .toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Keyboard shortcuts hint ── */
+  .shortcuts-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-top: 8px;
+  }
+
+  .workflow-shot {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .workflow-shot-row {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .workflow-shot-row .value {
+    color: var(--text-primary);
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .workflow-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .workflow-paths {
+    margin-top: 10px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .workflow-path {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px;
+    word-break: break-all;
+  }
+
+  .workflow-picker-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin: 8px 0 6px;
+  }
+
+  .workflow-picker {
+    width: 100%;
+    min-height: 132px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+  }
+
+  .workflow-picker:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  #seqValidationStatus[data-tone="ok"] { color: var(--accent); }
+  #seqValidationStatus[data-tone="bad"] { color: var(--warning); }
+  #seqValidationStatus[data-tone="dim"] { color: var(--text-dim); }
+
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="1" y="1" width="7" height="7" rx="1" fill="#00e5a0"/>
+        <rect x="10" y="1" width="9" height="7" rx="1" fill="#00e5a055"/>
+        <rect x="1" y="10" width="7" height="9" rx="1" fill="#00e5a033"/>
+        <rect x="10" y="10" width="9" height="9" rx="1" fill="#00e5a018"/>
+      </svg>
+      Sprite Workbench
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-controls">
+      <button class="btn" id="btnUpload" title="Upload video">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Upload Video
+      </button>
+      <button class="btn" id="btnReset" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+        New Video
+      </button>
+      <a class="btn" href="guide.html" target="_blank" title="Open user guide">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Guide
+      </a>
+    </div>
+    <div class="header-right" id="headerRight" style="display:none">
+      <button class="btn btn-accent" id="btnSaveSequenceHeader">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Export Bundle
+      </button>
+      <button class="btn" id="btnExportGif">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M8 12h2m4 0h2M9 8v8m6-8v8"/></svg>
+        Export GIF
+      </button>
+    </div>
+  </div>
+
+  <!-- Main area -->
+  <div class="main">
+    <!-- Preview -->
+    <div class="preview-panel empty-state" id="previewPanel">
+      <div class="upload-zone" id="uploadZone">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="20" height="20" rx="2"/>
+          <path d="M12 8v8M8 12h8"/>
+        </svg>
+        <div class="upload-title">Drop video here</div>
+        <div class="upload-sub">
+          Supports MP4, WebM, MOV<br>
+          Frames will be extracted for editing
+        </div>
+        <button class="btn btn-accent">Browse Files</button>
+      </div>
+      <input type="file" id="videoInput" accept="video/*">
+
+      <!-- Canvas preview (hidden until loaded) -->
+      <div class="preview-canvas-wrap" id="canvasWrap" style="display:none">
+        <canvas id="previewCanvas"></canvas>
+        <div class="preview-overlay" id="previewOverlay">
+          <div><span class="label">Frame </span><span class="value" id="overlayFrame">0/0</span></div>
+          <div><span class="label">Size </span><span class="value" id="overlaySize">0×0</span></div>
+          <div><span class="label">Loop </span><span class="value" id="overlayLoop">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-section" id="workflowSection" style="display:none">
+        <div class="section-title">Sequence Workflow</div>
+
+        <div class="control-row">
+          <span class="control-label">API Base</span>
+        </div>
+        <div style="margin-bottom:10px;">
+          <input type="text" id="apiBaseUrl" value="http://localhost:8787">
+        </div>
+
+        <div class="workflow-actions" style="margin-top:0;">
+          <button class="btn btn-sm" id="btnSequenceRefresh">Refresh</button>
+          <button class="btn btn-sm btn-accent" id="btnSequenceNext">Next Pending</button>
+        </div>
+
+        <div class="workflow-picker-meta">
+          <span>Sequence Picker</span>
+          <span><span id="seqShown">0</span> shown</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <input type="text" id="seqFilter" placeholder="Filter entity/animation/direction">
+        </div>
+        <select id="seqPicker" class="workflow-picker" size="7"></select>
+        <div class="workflow-actions" style="margin-top:6px;">
+          <button class="btn btn-sm" id="btnSequenceLoad">Load Selected</button>
+          <div class="range-indicator">Total <span id="seqTotal">0</span></div>
+        </div>
+
+        <div class="workflow-shot" style="margin-top:10px;">
+          <div class="workflow-shot-row"><span>Sequence</span><span class="value" id="seqKey">—</span></div>
+          <div class="workflow-shot-row"><span>Entity</span><span class="value" id="seqEntity">—</span></div>
+          <div class="workflow-shot-row"><span>Animation</span><span class="value" id="seqAnimation">—</span></div>
+          <div class="workflow-shot-row"><span>Direction</span><span class="value" id="seqDirection">—</span></div>
+          <div class="workflow-shot-row"><span>Planned Frames</span><span class="value" id="seqPlanned">—</span></div>
+          <div class="workflow-shot-row"><span>Done Frames</span><span class="value" id="seqDone">—</span></div>
+          <div class="workflow-shot-row"><span>State</span><span class="value" id="seqState">—</span></div>
+        </div>
+
+        <div class="control-row">
+          <span class="control-label">Batch ID</span>
+          <input type="text" id="wfBatchId" placeholder="2026-02-12_tier1_b01" style="width:150px;">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Take ID</span>
+          <input type="text" id="wfTakeId" placeholder="take_001" style="width:150px;">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Revision</span>
+          <input type="number" id="wfRevision" min="1" value="1">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Source Clip</span>
+        </div>
+        <div style="margin-bottom:10px;">
+          <input type="text" id="wfSourceClipPath" placeholder="resources/sprites/raw/.../clip.mp4">
+        </div>
+
+        <div class="workflow-actions" style="margin-top:8px;">
+          <button class="btn btn-sm btn-accent" id="btnSaveSequence">Export Bundle</button>
+          <span class="control-label" id="seqValidationStatus" data-tone="dim">Ready</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="statsSection" style="display:none">
+        <div class="section-title">Source Info</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="label">Frames</div>
+            <div class="value" id="statTotalFrames">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Active</div>
+            <div class="value" id="statActiveFrames">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Source FPS</div>
+            <div class="value" id="statSourceFps">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Dimensions</div>
+            <div class="value" id="statDimensions">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="timingSection" style="display:none">
+        <div class="section-title">Timing</div>
+        <div class="control-row">
+          <span class="control-label">Playback FPS</span>
+          <div class="control-value">
+            <input type="number" id="fpsInput" min="1" max="120" value="12">
+          </div>
+        </div>
+        <div style="margin: 8px 0;">
+          <input type="range" id="fpsSlider" min="1" max="60" value="12">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Loop Mode</span>
+          <select id="loopMode">
+            <option value="loop">Loop</option>
+            <option value="pingpong">Ping-Pong</option>
+            <option value="once">Play Once</option>
+          </select>
+        </div>
+        <div class="playback-controls">
+          <button class="btn" id="btnPrev" title="Previous frame (←)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="btn btn-accent" id="btnPlay" title="Play/Pause (Space)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" id="playIcon"><polygon points="5,3 19,12 5,21"/></svg>
+          </button>
+          <button class="btn" id="btnNext" title="Next frame (→)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zm-3.5 6L4 6v12z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="frameRangeSection" style="display:none">
+        <div class="section-title">Frame Range</div>
+        <div class="control-row">
+          <span class="control-label">Start Frame</span>
+          <input type="number" id="startFrame" min="0" value="0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">End Frame</span>
+          <input type="number" id="endFrame" min="0" value="0">
+        </div>
+        <div class="control-row" style="margin-top: 8px">
+          <span class="control-label">Skip Every N</span>
+          <input type="number" id="skipFrames" min="0" max="10" value="0">
+        </div>
+        <div class="shortcuts-hint">
+          <kbd>Space</kbd> Play &nbsp; <kbd>←</kbd><kbd>→</kbd> Step &nbsp; <kbd>D</kbd> Toggle frame
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="chromaKeySection" style="display:none">
+        <div class="section-title">Background Key</div>
+        <div class="control-row">
+          <span class="control-label">Enable</span>
+          <div class="onion-skin-toggle" id="keyToggle">
+            <div class="toggle-track" id="keyTrack">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Key Color</span>
+          <div class="control-value" style="gap: 8px;">
+            <div class="key-color-preview" id="keyColorPreview" style="width:24px;height:24px;border-radius:4px;border:1px solid var(--border);background:#ffffff;"></div>
+            <input type="color" id="keyColor" value="#ffffff" style="width:32px;height:24px;padding:0;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:none;">
+            <button class="btn btn-sm" id="btnEyedropper" title="Pick color from frame">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22l1-1h3l9-9M20.71 5.63l-2.34-2.34a1 1 0 00-1.41 0l-3.12 3.12 3.75 3.75 3.12-3.12a1 1 0 000-1.41z"/><path d="M14.59 7.41L6.8 15.2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Tolerance</span>
+          <input type="number" id="keyTolerance" min="0" max="255" value="40">
+        </div>
+        <div style="margin: 4px 0 8px;">
+          <input type="range" id="keyToleranceSlider" min="0" max="255" value="40">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Softness</span>
+          <input type="number" id="keySoftness" min="0" max="100" value="20">
+        </div>
+        <div style="margin: 4px 0 8px;">
+          <input type="range" id="keySoftnessSlider" min="0" max="100" value="20">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Despill</span>
+          <input type="number" id="keyDespill" min="0" max="100" value="50">
+        </div>
+        <div style="margin: 4px 0;">
+          <input type="range" id="keyDespillSlider" min="0" max="100" value="50">
+        </div>
+        <div class="shortcuts-hint" style="margin-top:8px">
+          Click <strong>eyedropper</strong> then click on the preview to pick the key color
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="displaySection" style="display:none">
+        <div class="section-title">Display</div>
+        <div class="control-row">
+          <span class="control-label">Onion Skin</span>
+          <div class="onion-skin-toggle" id="onionToggle">
+            <div class="toggle-track" id="onionTrack">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Background</span>
+        </div>
+        <div class="bg-color-row">
+          <div class="bg-color-swatch transparent active" data-bg="transparent" title="Transparent"></div>
+          <div class="bg-color-swatch" data-bg="#000000" style="background:#000" title="Black"></div>
+          <div class="bg-color-swatch" data-bg="#ffffff" style="background:#fff" title="White"></div>
+          <div class="bg-color-swatch" data-bg="#ff00ff" style="background:#ff00ff" title="Magenta"></div>
+          <div class="bg-color-swatch" data-bg="custom" style="background:#336699" title="Custom">
+            <input type="color" id="customBgColor" value="#336699">
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="exportSection" style="display:none">
+        <div class="section-title">Save & GIF Settings</div>
+        <div class="control-row">
+          <span class="control-label">Sheet Columns</span>
+          <input type="number" id="sheetCols" min="1" max="64" value="8">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Scale</span>
+          <div class="control-value">
+            <input type="number" id="exportScale" min="1" max="8" value="1">
+            <span class="unit">×</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Trim Alpha Bounds</span>
+          <input type="checkbox" id="trimAlphaBounds" checked>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Trim Padding</span>
+          <input type="number" id="trimPadding" min="0" max="32" value="1">
+        </div>
+        <div class="control-row">
+          <span class="control-label">GIF Max Size</span>
+          <div class="control-value">
+            <input type="number" id="gifMaxSize" min="32" max="2048" value="512">
+            <span class="unit">px</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">GIF Dither</span>
+          <select id="gifDither">
+            <option value="none">None</option>
+            <option value="ordered" selected>Ordered</option>
+            <option value="floyd">Floyd-Steinberg</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Empty state sidebar -->
+      <div class="sidebar-section" id="emptyInfo">
+        <div class="section-title">Getting Started</div>
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7;">
+          Upload a source video, curate the loop, and click <strong>Export Bundle</strong>. M1 is fully client-side and does not require a local API server.
+        </p>
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7; margin-top: 12px;">
+          Export includes a packed sheet PNG, atlas JSON, Godot SpriteFrames `.tres`, and a small manifest JSON.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline" id="timeline">
+    <div class="timeline-header">
+      <div class="timeline-header-left">
+        <div class="section-title" style="margin-bottom:0">Timeline</div>
+        <div class="timeline-info" id="timelineInfo" style="display:none">
+          <div>Enabled: <span id="tlEnabled">0</span></div>
+          <div>Duration: <span id="tlDuration">0s</span></div>
+        </div>
+      </div>
+      <div id="timelineActions" style="display:none; display:flex; gap:6px;">
+        <button class="btn btn-sm" id="btnSelectAll" title="Enable all frames">Select All</button>
+        <button class="btn btn-sm btn-danger" id="btnTrimToRange" title="Disable frames outside range">Trim to Range</button>
+      </div>
+    </div>
+    <div class="timeline-scroll" id="timelineScroll">
+      <div class="empty-timeline" id="emptyTimeline">Upload a video to see frames here</div>
+    </div>
+  </div>
+</div>
+
+<!-- Processing overlay -->
+<div class="processing-overlay hidden" id="processingOverlay">
+  <div class="processing-text" id="processingText">Extracting frames…</div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden video element -->
+<video id="sourceVideo" style="display:none" muted></video>
+
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>

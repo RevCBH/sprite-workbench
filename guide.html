@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Workbench — User Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0f;
+    --bg-panel: #12121a;
+    --bg-surface: #1a1a26;
+    --bg-elevated: #222233;
+    --border: #2a2a3d;
+    --text-primary: #e0e0f0;
+    --text-secondary: #9a9ab6;
+    --text-dim: #666684;
+    --accent: #00e5a0;
+    --warning: #ff6b4a;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Space Grotesk', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.75;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 28px 22px 80px;
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+  }
+
+  .brand {
+    font-family: var(--font-display);
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+  }
+
+  a:hover { background: #00e5a018; }
+
+  h1 {
+    font-family: var(--font-display);
+    color: var(--text-primary);
+    font-size: 30px;
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    color: var(--accent);
+    font-size: 20px;
+    margin-top: 34px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    color: var(--text-primary);
+    font-size: 15px;
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+
+  p { margin-bottom: 10px; }
+  strong { color: var(--text-primary); }
+
+  ul, ol { margin-left: 22px; margin-bottom: 10px; }
+  li { margin-bottom: 6px; }
+
+  code {
+    color: var(--accent);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+
+  pre {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    margin: 10px 0;
+    overflow-x: auto;
+  }
+
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 12px 0;
+  }
+
+  .warn {
+    border-left: 3px solid var(--warning);
+    padding-left: 12px;
+  }
+
+  .dim { color: var(--text-dim); }
+
+  kbd {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 1px 5px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">Sprite Workbench</div>
+    <a href="sprite-workbench.html">Back To Workbench</a>
+  </div>
+
+  <h1>User Guide (M1)</h1>
+  <p>M1 is <strong>client-only</strong>: load a clip, curate frames, export a bundle. No local API server is required.</p>
+
+  <h2>1. Start</h2>
+  <pre><code>cd sprite-workbench
+npm install
+npm run dev</code></pre>
+
+  <h2>2. Main Workflow</h2>
+  <ol>
+    <li><strong>Upload a video</strong> (drag/drop or file picker).</li>
+    <li><strong>Curate timing and frames</strong>:
+      <br><span class="dim">set in/out, skip cadence, disable bad frames, tune keying, preview playback.</span>
+    </li>
+    <li><strong>Export Bundle</strong> from the header action.</li>
+  </ol>
+
+  <h2>3. Export Output</h2>
+  <p>Bundle export writes a ZIP to your downloads folder containing:</p>
+  <ul>
+    <li><code>&lt;base&gt;.png</code> (sheet image)</li>
+    <li><code>&lt;base&gt;.atlas.json</code> (atlas metadata)</li>
+    <li><code>&lt;base&gt;.sprite_frames.tres</code> (Godot SpriteFrames text)</li>
+    <li><code>manifest.json</code> (basic export metadata)</li>
+  </ul>
+
+  <h2>4. Controls</h2>
+  <h3>Timeline</h3>
+  <ul>
+    <li>Click frame: preview frame.</li>
+    <li>Double-click or <kbd>D</kbd>: enable/disable frame.</li>
+    <li><kbd>←</kbd> / <kbd>→</kbd>: step active frames.</li>
+    <li><kbd>Space</kbd>: play/pause.</li>
+  </ul>
+
+  <h3>Range</h3>
+  <ul>
+    <li><kbd>I</kbd>: set In frame.</li>
+    <li><kbd>O</kbd>: set Out frame.</li>
+    <li><code>Skip Every N</code>: stride through enabled frames.</li>
+  </ul>
+
+  <h3>Background Key</h3>
+  <ul>
+    <li>Toggle keying on/off.</li>
+    <li>Eyedropper to pick key color from preview.</li>
+    <li>Adjust tolerance, softness, despill.</li>
+  </ul>
+
+  <h2>5. GIF Export</h2>
+  <p><strong>Export GIF</strong> is for fast review and does not affect bundle export.</p>
+
+  <h2>6. Roadmap</h2>
+  <div class="card warn">
+    <strong>M1:</strong> client-only editing/export.
+    <br>
+    <strong>v1:</strong> optional adapter-based project mode, including server-backed workflows.
+  </div>
+
+  <h2>7. Troubleshooting</h2>
+  <h3>No frames after upload</h3>
+  <p>Confirm the file is a supported video and retry with a shorter clip to isolate codec issues.</p>
+
+  <h3>Export seems empty</h3>
+  <p>Ensure at least one frame is enabled in range and that <code>Start/End</code> bounds include active frames.</p>
+</body>
+</html>
